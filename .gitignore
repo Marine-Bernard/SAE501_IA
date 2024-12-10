@@ -1,5 +1,4 @@
 vendor/
 .phpunit.cache/
 composer.lock
-animals/
-img-test/
+image/

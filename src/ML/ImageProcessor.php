@@ -7,7 +7,7 @@ use DirectoryIterator;
 
 class ImageProcessor
 {
-    private const TARGET_SIZE = 64;
+    private const TARGET_SIZE = 28; // Taille standard pour les chiffres MNIST
     private const VALID_EXTENSIONS = ['jpg', 'jpeg', 'png'];
 
     public function loadImages(string $directory): array
@@ -18,121 +18,76 @@ class ImageProcessor
 
         $samples = [];
         $labels = [];
-        $errors = [];
-
-        // Compte d'abord le nombre total d'images
-        $totalImages = 0;
-        foreach (new DirectoryIterator($directory) as $categoryInfo) {
-            if ($categoryInfo->isDot() || !$categoryInfo->isDir()) continue;
-            foreach (new DirectoryIterator($categoryInfo->getPathname()) as $imageInfo) {
-                if ($imageInfo->isDot() || !$imageInfo->isFile()) continue;
-                if (in_array(strtolower($imageInfo->getExtension()), self::VALID_EXTENSIONS)) {
-                    $totalImages++;
-                }
-            }
-        }
-
-        // Initialisation des variables de progression
+        $totalImages = $this->countImages($directory);
         $processedImages = 0;
         $startTime = microtime(true);
-        $lastUpdateTime = microtime(true);
-        
-        echo "Chargement des images : [" . str_repeat("░", 50) . "] 0% - Temps restant estimé : Calcul en cours...\r";
+
+        echo "Nombre total d'images trouvées : $totalImages\n";
 
         foreach (new DirectoryIterator($directory) as $categoryInfo) {
-            if ($categoryInfo->isDot() || !$categoryInfo->isDir()) {
-                continue;
-            }
+            if ($categoryInfo->isDot() || !$categoryInfo->isDir()) continue;
 
             $category = $categoryInfo->getFilename();
-            $categoryPath = $categoryInfo->getPathname();
+            $categoryCount = 0;
 
-            foreach (new DirectoryIterator($categoryPath) as $imageInfo) {
-                if ($imageInfo->isDot() || !$imageInfo->isFile()) {
-                    continue;
-                }
+            echo "\nChargement du dossier $category...\n";
+
+            foreach (new DirectoryIterator($categoryInfo->getPathname()) as $imageInfo) {
+                if ($imageInfo->isDot() || !$imageInfo->isFile()) continue;
 
                 if (in_array(strtolower($imageInfo->getExtension()), self::VALID_EXTENSIONS)) {
                     try {
                         $imageData = $this->processImage($imageInfo->getPathname());
                         if ($imageData !== null) {
                             $samples[] = $imageData;
-                            $labels[] = $category;
+                            $labels[] = (int)$category;
+                            $categoryCount++;
+                            $processedImages++;
+                            $this->updateProgress($processedImages, $totalImages, $startTime);
                         }
-                        
-                        // Mise à jour de la progression
-                        $processedImages++;
-                        $currentTime = microtime(true);
-                        
-                        // Mise à jour toutes les 0.5 secondes
-                        if (($currentTime - $lastUpdateTime) >= 0.5) {
-                            $progress = round(($processedImages / $totalImages) * 100);
-                            
-                            // Calcul du temps écoulé et estimation du temps restant
-                            $elapsedTime = $currentTime - $startTime;
-                            $imagesPerSecond = $processedImages / $elapsedTime;
-                            $remainingImages = $totalImages - $processedImages;
-                            $estimatedRemainingSeconds = $remainingImages / $imagesPerSecond;
-                            
-                            // Formatage des temps
-                            $remainingTime = $this->formatTime($estimatedRemainingSeconds);
-                            $elapsedTimeFormatted = $this->formatTime($elapsedTime);
-                            
-                            // Création de la barre de progression
-                            $bar = str_repeat("█", $progress / 2) . str_repeat("░", 50 - ($progress / 2));
-                            
-                            echo sprintf(
-                                "Chargement des images : [%s] %d%% (%d/%d) - %.2f img/s - Écoulé: %s - Restant: %s\r",
-                                $bar,
-                                $progress,
-                                $processedImages,
-                                $totalImages,
-                                $imagesPerSecond,
-                                $elapsedTimeFormatted,
-                                $remainingTime
-                            );
-                            
-                            $lastUpdateTime = $currentTime;
-                        }
-                        
                     } catch (\Exception $e) {
-                        $errors[] = "Erreur avec {$category}/{$imageInfo->getFilename()}: {$e->getMessage()}";
+                        error_log("Erreur avec {$category}/{$imageInfo->getFilename()}: {$e->getMessage()}");
                     }
                 }
             }
+
+            echo "\nDossier $category : $categoryCount images chargées\n";
         }
-        echo "\n"; // Nouvelle ligne après la barre de progression
 
         if (empty($samples)) {
-            throw new RuntimeException("Aucune image n'a pu être chargée" .
-                (!empty($errors) ? "\nErreurs:\n" . implode("\n", $errors) : ""));
+            throw new RuntimeException("Aucune image n'a pu être chargée");
         }
+
+        echo "\nTotal des images chargées : " . count($samples) . "\n";
 
         return [$samples, $labels];
     }
 
-    public function loadSingleImage(string $imagePath): array
+    private function countImages(string $directory): int
     {
-        if (!file_exists($imagePath)) {
-            throw new RuntimeException("L'image $imagePath n'existe pas");
-        }
+        $count = 0;
+        foreach (new DirectoryIterator($directory) as $categoryInfo) {
+            if ($categoryInfo->isDot() || !$categoryInfo->isDir()) continue;
 
-        $imageData = $this->processImage($imagePath);
-        if ($imageData === null) {
-            throw new RuntimeException("Impossible de traiter l'image");
+            $categoryCount = 0;
+            foreach (new DirectoryIterator($categoryInfo->getPathname()) as $imageInfo) {
+                if ($imageInfo->isDot() || !$imageInfo->isFile()) continue;
+                if (in_array(strtolower($imageInfo->getExtension()), self::VALID_EXTENSIONS)) {
+                    $categoryCount++;
+                    $count++;
+                }
+            }
+            echo "Dossier {$categoryInfo->getFilename()} : $categoryCount images\n";
         }
-
-        return [$imageData];
+        return $count;
     }
 
     private function processImage(string $path): ?array
     {
         $image = imagecreatefromstring(file_get_contents($path));
-        if (!$image) {
-            return null;
-        }
+        if (!$image) return null;
 
-        // Normalisation de la taille
+        // Conversion en niveaux de gris et redimensionnement
         $resized = imagecreatetruecolor(self::TARGET_SIZE, self::TARGET_SIZE);
         imagecopyresampled(
             $resized,
@@ -147,32 +102,17 @@ class ImageProcessor
             imagesy($image)
         );
 
-        // Extraction des caractéristiques avec normalisation
+        // Extraction des caractéristiques
         $features = [];
-        $totalR = $totalG = $totalB = 0;
-        $pixelCount = self::TARGET_SIZE * self::TARGET_SIZE;
-
-        // Première passe : calcul des moyennes
         for ($y = 0; $y < self::TARGET_SIZE; $y++) {
             for ($x = 0; $x < self::TARGET_SIZE; $x++) {
                 $rgb = imagecolorat($resized, $x, $y);
-                $totalR += ($rgb >> 16) & 0xFF;
-                $totalG += ($rgb >> 8) & 0xFF;
-                $totalB += $rgb & 0xFF;
-            }
-        }
-
-        $meanR = $totalR / $pixelCount;
-        $meanG = $totalG / $pixelCount;
-        $meanB = $totalB / $pixelCount;
-
-        // Deuxième passe : normalisation centrée-réduite
-        for ($y = 0; $y < self::TARGET_SIZE; $y++) {
-            for ($x = 0; $x < self::TARGET_SIZE; $x++) {
-                $rgb = imagecolorat($resized, $x, $y);
-                $features[] = ((($rgb >> 16) & 0xFF) - $meanR) / 255.0;
-                $features[] = ((($rgb >> 8) & 0xFF) - $meanG) / 255.0;
-                $features[] = (($rgb & 0xFF) - $meanB) / 255.0;
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+                // Conversion en niveau de gris et normalisation
+                $gray = ($r + $g + $b) / (3 * 255.0);
+                $features[] = $gray;
             }
         }
 
@@ -182,23 +122,43 @@ class ImageProcessor
         return $features;
     }
 
-    /**
-     * Formate un temps en secondes en une chaîne lisible
-     */
+    private function updateProgress(int $current, int $total, float $startTime): void
+    {
+        $progress = ($current / $total) * 100;
+        $elapsed = microtime(true) - $startTime;
+        $rate = $current / $elapsed;
+        $eta = ($total - $current) / $rate;
+
+        printf(
+            "\rProgression : [%-50s] %d%% - %d/%d images - %.2f img/s - ETA: %s",
+            str_repeat('█', $progress / 2) . str_repeat('░', 50 - ($progress / 2)),
+            $progress,
+            $current,
+            $total,
+            $rate,
+            $this->formatTime($eta)
+        );
+    }
+
     private function formatTime(float $seconds): string
     {
-        if ($seconds < 60) {
-            return round($seconds) . "s";
+        if ($seconds < 60) return round($seconds) . "s";
+        if ($seconds < 3600) return sprintf("%dm %ds", floor($seconds / 60), $seconds % 60);
+        return sprintf("%dh %dm %ds", floor($seconds / 3600), floor(($seconds % 3600) / 60), $seconds % 60);
+    }
+
+
+    public function loadSingleImage(string $path): array
+    {
+        if (!file_exists($path)) {
+            throw new RuntimeException("L'image $path n'existe pas");
         }
-        if ($seconds < 3600) {
-            $minutes = floor($seconds / 60);
-            $seconds = round($seconds % 60);
-            return "{$minutes}m {$seconds}s";
+
+        $imageData = $this->processImage($path);
+        if ($imageData === null) {
+            throw new RuntimeException("Impossible de traiter l'image $path");
         }
-        
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
-        $seconds = round($seconds % 60);
-        return "{$hours}h {$minutes}m {$seconds}s";
+
+        return $imageData;
     }
 }

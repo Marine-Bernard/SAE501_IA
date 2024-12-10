@@ -2,52 +2,92 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Mjrmb\Sae501ia\ML\AnimalClassifier;
+use Mjrmb\Sae501ia\ML\DigitClassifier;
 use Mjrmb\Sae501ia\ML\ModelSerializer;
+use Rubix\ML\CrossValidation\Metrics\Accuracy;
+
+ini_set('memory_limit', '10G');
+ini_set('display_errors', 1);
 
 try {
-  if ($argc < 2) {
-    echo "Usage: php test.php <chemin_vers_image>\n";
-    exit(1);
+  // Récupère le type de modèle depuis les arguments
+  $modelType = $argc > 1 ? $argv[1] : 'tree';
+  if (!in_array($modelType, ['tree', 'mlp'])) {
+    throw new \RuntimeException("Type de modèle invalide. Utilisez 'tree' ou 'mlp'");
   }
 
-  $imagePath = $argv[1];
-
-  if (!file_exists($imagePath)) {
-    throw new \RuntimeException("L'image $imagePath n'existe pas");
-  }
-
-  echo "=== Classification d'image ===\n\n";
+  echo "=== Évaluation du modèle ($modelType) sur le jeu de test ===\n\n";
 
   // Charge le modèle pré-entraîné
-  $serializer = new ModelSerializer();
+  $serializer = new ModelSerializer($modelType);
   [$model, $metadata] = $serializer->loadModel();
 
-  $classifier = new AnimalClassifier();
+  $classifier = new DigitClassifier($modelType);
   $classifier->setModel($model);
 
   echo "Modèle chargé (entraîné le {$metadata['training_date']})\n";
-  echo "Analyse de l'image : $imagePath\n\n";
 
-  // Prédiction
+  $testingPath = __DIR__ . '/../../image/testing';
+  if (!is_dir($testingPath)) {
+    throw new \RuntimeException("Le dossier 'image/testing' n'existe pas");
+  }
+
+  // Initialisation des métriques
+  $totalImages = 0;
+  $correctPredictions = 0;
+  $confusionMatrix = array_fill(0, 10, array_fill(0, 10, 0));
   $startTime = microtime(true);
-  $result = $classifier->predict($imagePath);
-  $predictionTime = round((microtime(true) - $startTime) * 1000);
 
-  // Affichage des résultats
-  echo "=== Résultats ===\n";
-  echo "Prédiction : {$result['prediction']}\n";
-  echo "Temps d'analyse : {$predictionTime}ms\n\n";
+  // Parcours des dossiers de test
+  foreach (new \DirectoryIterator($testingPath) as $categoryInfo) {
+    if ($categoryInfo->isDot() || !$categoryInfo->isDir()) continue;
 
-   // SVC ne fournit pas de probabilités
-   if (!empty($result['probabilities'])) {
-    echo "\nProbabilités par classe :\n";
-    foreach ($result['probabilities'] as $class => $probability) {
-      $percentage = round($probability * 100, 2);
-      $bar = str_repeat('█', (int)($percentage / 5));
-      echo sprintf("%-10s : %s %.2f%%\n", $class, $bar, $percentage);
+    $expectedDigit = (int)$categoryInfo->getFilename();
+    $categoryPath = $categoryInfo->getPathname();
+
+    foreach (new \DirectoryIterator($categoryPath) as $imageInfo) {
+      if ($imageInfo->isDot() || !$imageInfo->isFile()) continue;
+
+      $imagePath = $imageInfo->getPathname();
+      $result = $classifier->predict($imagePath);
+      $predictedDigit = $result['prediction'];
+
+      // Mise à jour des métriques
+      $totalImages++;
+      if ($predictedDigit === $expectedDigit) {
+        $correctPredictions++;
+      }
+      $confusionMatrix[$expectedDigit][$predictedDigit]++;
+
+      // Affichage de la progression
+      printf("\rTraitement des images : %d", $totalImages);
     }
   }
+
+  $accuracy = ($correctPredictions / $totalImages) * 100;
+  $duration = microtime(true) - $startTime;
+
+  // Affichage des résultats
+  echo "\n\n=== Résultats de l'évaluation ===\n";
+  echo "Images testées : $totalImages\n";
+  echo "Prédictions correctes : $correctPredictions\n";
+  echo "Précision : " . round($accuracy, 2) . "%\n";
+  echo "Durée : " . round($duration, 2) . " secondes\n\n";
+
+  // Affichage de la matrice de confusion
+  echo "Matrice de confusion :\n";
+  echo str_repeat('-', 45) . "\n";
+  echo "   | " . implode(' ', range(0, 9)) . "\n";
+  echo str_repeat('-', 45) . "\n";
+
+  for ($i = 0; $i < 10; $i++) {
+    printf(" %d | ", $i);
+    for ($j = 0; $j < 10; $j++) {
+      printf("%2d ", $confusionMatrix[$i][$j]);
+    }
+    echo "\n";
+  }
+  echo str_repeat('-', 45) . "\n";
 } catch (\Exception $e) {
   echo "\n❌ Erreur : " . $e->getMessage() . "\n";
   exit(1);

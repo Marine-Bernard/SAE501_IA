@@ -2,56 +2,30 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Mjrmb\Sae501ia\ML\AnimalClassifier;
+use Mjrmb\Sae501ia\ML\DigitClassifier;
 use Mjrmb\Sae501ia\ML\ModelSerializer;
-use Rubix\ML\Persistable;
 
-// Configuration
-ini_set('display_errors', 1);
 ini_set('memory_limit', '10G');
+ini_set('display_errors', 1);
 
 try {
-  echo "=== Démarrage de l'entraînement du classificateur d'animaux ===\n\n";
+  $modelType = $argc > 1 ? $argv[1] : 'tree';
+  if (!in_array($modelType, ['tree', 'mlp'])) {
+    throw new \RuntimeException("Type de modèle invalide. Utilisez 'tree' ou 'mlp'");
+  }
 
-  $classifier = new AnimalClassifier();
-  $serializer = new ModelSerializer();
+  echo "=== Entraînement du classificateur de chiffres ($modelType) ===\n\n";
 
-  $datasetPath = __DIR__ . '/../../animals';
+  $classifier = new DigitClassifier($modelType);
+  $serializer = new ModelSerializer($modelType);
 
-  echo "Chargement des images depuis : $datasetPath\n";
-
-  // Vérifie si le dossier existe
+  $datasetPath = __DIR__ . '/../../image/training';
   if (!is_dir($datasetPath)) {
-    throw new \RuntimeException("Le dossier 'animals' n'existe pas à la racine du projet");
+    throw new \RuntimeException("Le dossier 'image/training' n'existe pas");
   }
 
-  // Liste les catégories (dossiers)
-  $categories = array_filter(scandir($datasetPath), function ($item) use ($datasetPath) {
-    return is_dir($datasetPath . '/' . $item) && !in_array($item, ['.', '..']);
-  });
-
-  echo "Catégories trouvées : " . implode(', ', $categories) . "\n\n";
-
-  // Entraînement
-  $results = $classifier->train($datasetPath);
-
-  echo "\nRésultats de l'entraînement :\n";
-  echo "- Images traitées : {$results['samples_count']}\n";
-  echo "- Précision : {$results['accuracy']}%\n";
-  echo "- Durée : {$results['training_time']} secondes\n";
-
-  // Sauvegarde
-  echo "\nSauvegarde du modèle...\n";
-  $model = $classifier->getModel();
-  if ($model instanceof Persistable) {
-    $serializer->saveModel($model, [
-      'training_date' => date('Y-m-d H:i:s'),
-      'metrics' => $results,
-      'categories' => $categories
-    ]);
-  } else {
-    throw new \RuntimeException("Le modèle doit implémenter l'interface Persistable");
-  }
+  $classifier->train($datasetPath);
+  $serializer->saveModel($classifier->getClassifier(), []);
 
   echo "\n✅ Entraînement terminé avec succès !\n";
 } catch (\Exception $e) {
