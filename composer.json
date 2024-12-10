@@ -12,7 +12,8 @@
         }
     ],
     "require": {
-        "rubix/ml": "^2.5"
+        "rubix/ml": "^2.5",
+        "ext-gd": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.5"
