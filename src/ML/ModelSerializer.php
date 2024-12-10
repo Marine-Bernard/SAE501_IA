@@ -2,6 +2,9 @@
 
 namespace Mjrmb\Sae501ia\ML;
 
+use Mjrmb\Sae501ia\ML\Models\Tree;
+use Mjrmb\Sae501ia\ML\Models\MLP;
+use Mjrmb\Sae501ia\ML\Models\ModelInterface;
 use Rubix\ML\Classifiers\ClassificationTree;
 use Rubix\ML\Classifiers\MultilayerPerceptron;
 use Rubix\ML\Persistable;
@@ -21,14 +24,21 @@ class ModelSerializer
         $this->metadataPath = __DIR__ . "/../../models/metadata_{$modelType}.json";
     }
 
-    public function saveModel(Persistable $model, array $metadata = []): void
+    public function saveModel(ModelInterface $model, array $metadata = []): void
     {
+        $baseModel = $model->getModel();
+
         // Vérifie que le modèle est d'un type valide
+        if (!($baseModel instanceof Persistable)) {
+            throw new \RuntimeException("Le modèle doit être persistable");
+        }
+
+        // Vérifie la correspondance du type
         if (
-            !($model instanceof ClassificationTree) &&
-            !($model instanceof MultilayerPerceptron)
+            ($this->modelType === 'tree' && !($model instanceof Tree)) ||
+            ($this->modelType === 'mlp' && !($model instanceof MLP))
         ) {
-            throw new \RuntimeException("Le modèle doit être une instance de ClassificationTree ou MultilayerPerceptron");
+            throw new \RuntimeException("Le type du modèle ne correspond pas au type attendu");
         }
 
         // Crée le répertoire si nécessaire
@@ -38,14 +48,14 @@ class ModelSerializer
 
         // Utilise le sérialiseur RBX pour convertir le modèle
         $serializer = new RBX();
-        $encoding = $serializer->serialize($model);
+        $encoding = $serializer->serialize($baseModel);
 
         // Sauvegarde le modèle
         $persister = new Filesystem($this->modelPath);
         $persister->save($encoding);
 
         // Ajoute des informations aux métadonnées
-        $metadata['model_type'] = get_class($model);
+        $metadata['model_type'] = get_class($baseModel);
         $metadata['training_date'] = date('Y-m-d H:i:s');
 
         // Sauvegarde les métadonnées
@@ -67,14 +77,27 @@ class ModelSerializer
 
         // Désérialise le modèle
         $serializer = new RBX();
-        $model = $serializer->deserialize($encoding);
+        $baseModel = $serializer->deserialize($encoding);
 
-        // Vérifie que le modèle est d'un type valide
-        if (
-            !($model instanceof ClassificationTree) &&
-            !($model instanceof MultilayerPerceptron)
-        ) {
-            throw new \RuntimeException('Le modèle chargé n\'est pas du bon type');
+        // Crée l'instance du wrapper approprié
+        $model = match ($this->modelType) {
+            'tree' => new Tree(),
+            'mlp' => new MLP(),
+            default => throw new \RuntimeException("Type de modèle non supporté")
+        };
+
+        // Vérifie et configure le modèle chargé
+        if ($this->modelType === 'tree' && !($baseModel instanceof ClassificationTree)) {
+            throw new \RuntimeException('Le modèle chargé n\'est pas un ClassificationTree');
+        } elseif ($this->modelType === 'mlp' && !($baseModel instanceof MultilayerPerceptron)) {
+            throw new \RuntimeException('Le modèle chargé n\'est pas un MultilayerPerceptron');
+        }
+
+        // Configure le modèle de base dans le wrapper
+        if ($this->modelType === 'tree') {
+            $model->setModel($baseModel);
+        } else {
+            $model->setModel($baseModel);
         }
 
         // Charge les métadonnées

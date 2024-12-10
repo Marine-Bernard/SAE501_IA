@@ -2,35 +2,27 @@
 
 namespace Mjrmb\Sae501ia\ML;
 
+use Mjrmb\Sae501ia\ML\Models\Tree;
+use Mjrmb\Sae501ia\ML\Models\MLP;
+use Mjrmb\Sae501ia\ML\Models\ModelInterface;
 use DirectoryIterator;
-use Rubix\ML\Classifiers\ClassificationTree;
-use Rubix\ML\Classifiers\MultilayerPerceptron;
-use Rubix\ML\NeuralNet\Layers\Dense;
-use Rubix\ML\NeuralNet\Layers\Activation;
-use Rubix\ML\NeuralNet\ActivationFunctions\ReLU;
-use Rubix\ML\NeuralNet\Optimizers\Adam;
 use Rubix\ML\Datasets\Labeled;
 use RuntimeException;
+use Rubix\ML\Classifiers\MultilayerPerceptron;
 
 class DigitClassifier
 {
-    private $classifier;
-    private $type;
+    private ModelInterface $model;
+    private string $type;
 
     public function __construct(string $type = 'tree')
     {
         $this->type = $type;
-
-        if ($type === 'tree') {
-            $this->classifier = new ClassificationTree(15, 5, 0.001, null, null);
-        } else {
-            $this->classifier = new MultilayerPerceptron([
-                new Dense(3),
-                new Activation(new ReLU()),
-                new Dense(3),
-                new Activation(new ReLU()),
-            ], 128, new Adam(0.001), 0, 1);
-        }
+        $this->model = match ($type) {
+            'tree' => new Tree(),
+            'mlp' => new MLP(),
+            default => throw new RuntimeException("Type de modèle invalide")
+        };
     }
 
     public function train(string $datasetPath): void
@@ -95,7 +87,7 @@ class DigitClassifier
         echo "Début de l'entraînement...\n";
         try {
             $dataset = new Labeled($samples, $labels);
-            $this->classifier->train($dataset);
+            $this->model->train($dataset);
             echo "Entraînement terminé !\n";
         } catch (\Exception $e) {
             echo "Erreur pendant l'entraînement : " . $e->getMessage() . "\n";
@@ -126,12 +118,15 @@ class DigitClassifier
         imagedestroy($resized);
 
         // Prédiction
-        $prediction = $this->classifier->predict(new Labeled([$pixels], ["temp"]))[0];
+        $dataset = new Labeled([$pixels], ["temp"]);
+        $prediction = $this->model->predict($dataset)[0];
         $probabilities = [];
 
-        if (method_exists($this->classifier, 'proba')) {
+        // Récupération des probabilités si disponibles
+        $baseModel = $this->model->getModel();
+        if ($baseModel instanceof MultilayerPerceptron) {
             try {
-                $probabilities = $this->classifier->proba(new Labeled([$pixels], ["temp"]))[0];
+                $probabilities = $baseModel->proba($dataset)[0];
             } catch (\Exception $e) {
                 // Ignore if probabilities are not available
             }
@@ -145,19 +140,19 @@ class DigitClassifier
         ];
     }
 
-    public function getClassifier()
+    public function getModel(): ModelInterface
     {
-        return $this->classifier;
+        return $this->model;
     }
 
     public function setModel($model): void
     {
         if (
-            !($model instanceof ClassificationTree) &&
-            !($model instanceof MultilayerPerceptron)
+            $this->type === 'tree' && !($model instanceof Tree) ||
+            $this->type === 'mlp' && !($model instanceof MLP)
         ) {
-            throw new \RuntimeException("Type de modèle invalide");
+            throw new RuntimeException("Type de modèle invalide");
         }
-        $this->classifier = $model;
+        $this->model = $model;
     }
 }

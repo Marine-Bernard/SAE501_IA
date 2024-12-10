@@ -25,7 +25,7 @@ try {
   }
 
   $classifier->train($datasetPath);
-  $serializer->saveModel($classifier->getClassifier(), []);
+  $serializer->saveModel($classifier->getModel(), []);
 
   echo "\n✅ Entraînement terminé avec succès !\n";
 } catch (\Exception $e) {
