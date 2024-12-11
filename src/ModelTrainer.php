@@ -1,10 +1,11 @@
 <?php
 
-namespace  Mjrmb\Sae501ia;
+namespace Mjrmb\Sae501ia;
 
 use Mjrmb\Sae501ia\interface\InterfaceModeltrainer;
 use Rubix\ML\Classifiers\ClassificationTree;
 use Rubix\ML\Classifiers\MultilayerPerceptron;
+use Rubix\ML\Classifiers\RandomForest;
 use Rubix\ML\NeuralNet\ActivationFunctions\ReLU;
 use Rubix\ML\NeuralNet\Layers\Dense;
 use Rubix\ML\NeuralNet\Layers\Activation;
@@ -15,7 +16,7 @@ use Rubix\ML\CrossValidation\Reports\ConfusionMatrix;
 use Rubix\ML\Datasets\Labeled;
 use Rubix\ML\Estimator;
 
-class ModelTrainer implements InterfaceModeltrainer
+class ModelTrainer
 {
     private Estimator $estimator;
 
@@ -29,7 +30,7 @@ class ModelTrainer implements InterfaceModeltrainer
                 new Activation(new ReLU()),
             ], 128, new Adam(0.001), 0, 10);
         } else {
-            $this->estimator = new ClassificationTree();
+            $this->estimator = new RandomForest(new ClassificationTree());
         }
     }
 
