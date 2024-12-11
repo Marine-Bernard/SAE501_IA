@@ -4,7 +4,6 @@ namespace Mjrmb\Sae501ia\tests;
 
 use PHPUnit\Framework\TestCase;
 use Rubix\ML\Estimator;
-
 class ModelTrainerTest extends TestCase
 {
     public function testConstruct(): void

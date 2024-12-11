@@ -2,16 +2,19 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Mjrmb\Sae501ia\RubixPhp\DatasetLoader;
-use Mjrmb\Sae501ia\RubixPhp\ModelTrainer;
+use Mjrmb\Sae501ia\DatasetLoader;
+use Mjrmb\Sae501ia\ModelTrainer;
+use Mjrmb\Sae501ia\Service\Vectorisation;
 
 $algorithm = $argv[1] ?? 'tree'; // Récupère l'argument de ligne de commande ou utilise 'tree' par défaut
 
 $loader = new DatasetLoader();
 $trainer = new ModelTrainer($algorithm);
+$vertoriseur = new Vectorisation();
 
 echo "Loading training dataset...\n";
 $trainingDataset = $loader->loadDataset(__DIR__ . '/../../image/training');
+$vectoriseur->verctoriser($trainingDataset);
 echo "Training dataset loaded.\n";
 
 echo "Training the model...\n";

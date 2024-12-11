@@ -2,23 +2,24 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Mjrmb\Sae501ia\RubixPhp\DatasetLoader;
-use Mjrmb\Sae501ia\RubixPhp\ModelTrainer;
+use Mjrmb\Sae501ia\DatasetLoader;
+use Mjrmb\Sae501ia\ModelTester;
+use Mjrmb\Sae501ia\ModelTrainer;
 
 $algorithm = $argv[1] ?? 'tree'; // Récupère l'argument de ligne de commande ou utilise 'tree' par défaut
 
 $loader = new DatasetLoader();
-$trainer = new ModelTrainer($algorithm);
+$tester = new ModelTester($algorithm);
 
 echo "Loading testing dataset...\n";
 $testingDataset = $loader->loadDataset(__DIR__ . '/../../image/testing');
 echo "Testing dataset loaded.\n";
 
 // Load the trained model
-$trainer->loadModel(__DIR__ . '/../../models/model_' . $algorithm . '.rbx');
+$tester->loadModel(__DIR__ . '/../../models/model_' . $algorithm . '.rbx');
 
 echo "Testing the model...\n";
-$results = $trainer->test($testingDataset);
+$results = $tester->test($testingDataset);
 $accuracy = $results['accuracy'];
 $confusionMatrix = $results['confusion_matrix'];
 
