@@ -1,6 +1,6 @@
 <?php
 
-namespace Mathis\RubixPhp;
+namespace Mjrmb\Sae501ia;
 
 use Rubix\ML\Datasets\Labeled;
 

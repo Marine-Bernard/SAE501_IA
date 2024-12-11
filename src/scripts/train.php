@@ -2,8 +2,8 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Mathis\RubixPhp\DatasetLoader;
-use Mathis\RubixPhp\ModelTrainer;
+use Mjrmb\Sae501ia\RubixPhp\DatasetLoader;
+use Mjrmb\Sae501ia\RubixPhp\ModelTrainer;
 
 $algorithm = $argv[1] ?? 'tree'; // Récupère l'argument de ligne de commande ou utilise 'tree' par défaut
 
