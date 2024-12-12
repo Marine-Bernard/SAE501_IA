@@ -1,15 +1,15 @@
 <?php 
 
-namespace Mjrmb\Sae501ia\tests\Model;
+namespace Tests\Spark\Model;
 
-use Mjrmb\Sae501ia\Model\Tree;
+use Spark\Model\Tree;
 use PHPUnit\Framework\TestCase;
-use Rubix\ML\Classifiers\ClassificationTree;
+use Rubix\ML\Classifiers\RandomForest;
 
 class treeTest extends TestCase{
     public function testCreateModelTree(): void
     {
         $model = (new Tree())->createModelTree();
-        $this->assertInstanceOf(ClassificationTree::class,$model);
+        $this->assertInstanceOf(RandomForest::class,$model);
     }
 }

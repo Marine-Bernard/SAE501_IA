@@ -1,6 +1,6 @@
 <?php 
 
-namespace Mjrmb\Sae501ia\Exception;
+namespace Spark\Exception;
 
 class NoModelException extends \Exception{
     

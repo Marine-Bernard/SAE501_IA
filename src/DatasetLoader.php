@@ -1,6 +1,6 @@
 <?php
 
-namespace Mjrmb\Sae501ia;
+namespace Spark;
 
 use Rubix\ML\Datasets\Labeled;
 

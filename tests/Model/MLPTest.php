@@ -1,9 +1,8 @@
 <?php 
 
-namespace Mjrmb\Sae501ia\tests\Model;
+namespace Tests\SparkModel;
 
-use Mjrmb\Sae501ia\Model\MLP;
-use Mjrmb\Sae501ia\Model\Tree;
+use Spark\Model\MLP;
 use PHPUnit\Framework\TestCase;
 use Rubix\ML\Classifiers\MultilayerPerceptron;
 

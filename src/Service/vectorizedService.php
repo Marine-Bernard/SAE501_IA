@@ -1,6 +1,6 @@
 <?php
 
-namespace Mjrmb\Sae501ia\Service;
+namespace Spark\Service;
 
 use Rubix\ML\Datasets\Labeled;
 use Rubix\ML\Transformers\ImageVectorizer;

@@ -1,16 +1,15 @@
 <?php
 
-namespace Mjrmb\Sae501ia;
+namespace Spark;
 
-use Mjrmb\Sae501ia\Fabric\ModelFabric;
-use Mjrmb\Sae501ia\interface\InterfaceModelTrainer;
-use Rubix\ML\Transformers\ImageVectorizer;
+
 use Rubix\ML\CrossValidation\Metrics\Accuracy;
 use Rubix\ML\CrossValidation\Reports\ConfusionMatrix;
 use Rubix\ML\Datasets\Labeled;
 use Rubix\ML\Estimator;
+use Spark\Fabric\ModelFabric;
 
-class ModelTester implements InterfaceModelTrainer
+class ModelTester
 {
     private Estimator $estimator;
 
@@ -21,8 +20,6 @@ class ModelTester implements InterfaceModelTrainer
 
     public function test(Labeled $testingDataset): array
     {
-        $vectorizer = new ImageVectorizer();
-        $testingDataset->apply($vectorizer);
         $predictions = $this->estimator->predict($testingDataset);
 
         $accuracy = new Accuracy();

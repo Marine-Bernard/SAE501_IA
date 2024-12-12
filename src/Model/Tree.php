@@ -1,6 +1,6 @@
 <?php
 
-namespace Mjrmb\Sae501ia\Model;
+namespace Spark\Model;
 
 use Rubix\ML\Classifiers\ClassificationTree;
 use Rubix\ML\Classifiers\RandomForest;

@@ -1,8 +1,7 @@
 <?php
 
-namespace Mjrmb\Sae501ia\interface;
+namespace Spark\interface;
 
-interface InterfaceModelTrainer
-{
+interface InterfaceModeltrainer{
 
 }

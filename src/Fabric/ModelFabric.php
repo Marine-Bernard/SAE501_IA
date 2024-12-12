@@ -1,10 +1,10 @@
 <?php
 
-namespace Mjrmb\Sae501ia\Fabric;
+namespace Spark\Fabric;
 
-use Mjrmb\Sae501ia\Exception\NoModelException;
-use Mjrmb\Sae501ia\Model\MLP;
-use Mjrmb\Sae501ia\Model\Tree;
+use Spark\Exception\NoModelException;
+use Spark\Model\MLP;
+use Spark\Model\Tree;
 use Rubix\ML\Estimator;
 
 class ModelFabric

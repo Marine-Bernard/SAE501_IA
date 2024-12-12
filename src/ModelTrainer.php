@@ -1,8 +1,8 @@
 <?php
 
-namespace Mjrmb\Sae501ia;
+namespace Spark;
 
-use Mjrmb\Sae501ia\Fabric\ModelFabric;
+use Spark\Fabric\ModelFabric;
 use Rubix\ML\Datasets\Labeled;
 use Rubix\ML\Estimator;
 
@@ -23,6 +23,11 @@ class ModelTrainer
     public function saveModel(string $filePath): void
     {
         file_put_contents($filePath, serialize($this->estimator));
+    }
+
+    public function getEstimator(): Estimator
+    {
+        return $this->estimator;
     }
 
 }

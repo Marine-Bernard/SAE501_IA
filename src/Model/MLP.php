@@ -1,6 +1,6 @@
 <?php
 
-namespace Mjrmb\Sae501ia\Model;
+namespace Spark\Model;
 
 use Rubix\ML\Classifiers\MultilayerPerceptron;
 use Rubix\ML\NeuralNet\ActivationFunctions\ReLU;
