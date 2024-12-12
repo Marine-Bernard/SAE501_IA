@@ -3,7 +3,7 @@
 namespace Mjrmb\Sae501ia\tests\Fabrique;
 
 use Mjrmb\Sae501ia\Exception\NoModelException;
-use Mjrmb\Sae501ia\Fabrique\ModelFabric;
+use Mjrmb\Sae501ia\Fabric\ModelFabric;
 use Mjrmb\Sae501ia\Model\MLP;
 use Mjrmb\Sae501ia\Model\Tree;
 use PHPUnit\Framework\TestCase;

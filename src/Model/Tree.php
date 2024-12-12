@@ -1,14 +1,15 @@
 <?php
 
-namespace  Mjrmb\Sae501ia\Model;
+namespace Mjrmb\Sae501ia\Model;
 
 use Rubix\ML\Classifiers\ClassificationTree;
-use Rubix\ML\Estimator;
+use Rubix\ML\Classifiers\RandomForest;
 
-
-class Tree extends Estimator {
-    public function createModelTree(): ClassificationTree
+class Tree extends ClassificationTree
+{
+    public function createModelTree(): RandomForest
     {
-        return new ClassificationTree();
+        parent::__construct();
+        return new RandomForest(new ClassificationTree());
     }
 }

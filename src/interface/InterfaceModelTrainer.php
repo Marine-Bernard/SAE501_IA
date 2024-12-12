@@ -2,6 +2,7 @@
 
 namespace Mjrmb\Sae501ia\interface;
 
-interface InterfaceModeltrainer{
+interface InterfaceModelTrainer
+{
 
 }

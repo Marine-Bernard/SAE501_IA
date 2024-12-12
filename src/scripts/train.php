@@ -4,17 +4,17 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Mjrmb\Sae501ia\DatasetLoader;
 use Mjrmb\Sae501ia\ModelTrainer;
-use Mjrmb\Sae501ia\Service\Vectorisation;
+use Mjrmb\Sae501ia\Service\vectorizedService;
 
-$algorithm = $argv[1] ?? 'tree'; // Récupère l'argument de ligne de commande ou utilise 'tree' par défaut
+$algorithm = $argv[1] ?? 'tree';
 
 $loader = new DatasetLoader();
 $trainer = new ModelTrainer($algorithm);
-$vertoriseur = new Vectorisation();
+$vector = new vectorizedService();
 
 echo "Loading training dataset...\n";
 $trainingDataset = $loader->loadDataset(__DIR__ . '/../../image/training');
-$vectoriseur->verctoriser($trainingDataset);
+$vector->vectorizedImage($trainingDataset);
 echo "Training dataset loaded.\n";
 
 echo "Training the model...\n";
