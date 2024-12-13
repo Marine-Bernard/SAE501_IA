@@ -10,7 +10,6 @@ class vectorizedService
     public function vectorizedImage(Labeled $trainingDataset): void
     {
         $vector = new ImageVectorizer();
-        var_dump($vector);
         $trainingDataset->apply($vector);
     }
 
