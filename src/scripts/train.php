@@ -1,6 +1,7 @@
 <?php
 
 use Spark\DatasetLoader;
+use Spark\ModelTester;
 use Spark\ModelTrainer;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
